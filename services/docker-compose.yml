@@ -1,0 +1,102 @@
+version: "3"
+
+services:
+  backend:
+    container_name: backend
+    build:
+      context: ./
+      dockerfile: ./project/.Dockerfile
+    environment:
+      ASPNETCORE_ConnectionStrings__PgDatabase: "Host=postgres_db;Port=5432;Database=MyPgDatabase;Username=postgres;Password=azaza123123"
+      ASPNETCORE_ENVIRONMENT: Testing
+
+      GOOGLE_APPLICATION_CREDENTIALS: '/mounted/firebase-service-key.json'
+
+      EmailServiceConfig__Emails__0: "birdegop@bk.ru"
+      EmailServiceConfig__DelayBetweenEmailsMs: 500
+      EmailServiceConfig__SaveFile: true
+
+      EmailSenderConfig__SmtpHost: "connect.smtp.bz"
+      EmailSenderConfig__SmtpPort: 2525
+      EmailSenderConfig__UseSSL: true
+      EmailSenderConfig__SmtpLogin: "birdegop@bk.ru"
+      EmailSenderConfig__SmtpPassword: "6XTwhQP0mwQw"
+      EmailSenderConfig__SenderEmail: "sampletext32@bk.ru"
+      EmailSenderConfig__SenderVisibleName: "BirdEgop"
+      
+      TelegramConfig__Token: "2019264519:AAH-434539D0-6B2A-4451-A226-B03BF91CF329"
+      TelegramConfig__BotChatId: "1023423553838"
+      ClientAccountServiceConfig__QuotaIgnoredLogins_0: "+79611056161"
+      ClientAccountServiceConfig__QuotaIgnoredLogins_1: "+79532819045"
+      ClientAccountServiceConfig__MaxInvalidRequestsPerDay: 3
+      ClientAccountServiceConfig__MaxInvalidAttemptsPerDay: 5
+      ClientAccountServiceConfig__UseFakeCode: true
+      ClientAccountServiceConfig__SendType: "Call"
+      
+      StaticConfig__StaticFilesPath: '/mounted/static'
+      StaticConfig__CertificatePath: '/mounted/ssl_certificate/cert2.pem'
+      
+      PaymentServiceConfig__SuccessUrl: 'https://birdegop.ru/payment/success'
+      PaymentServiceConfig__FailUrl: 'https://birdegop.ru/payment/fail'
+      PaymentServiceConfig__SberbankUrl: 'https://3dsec.sberbank.ru'
+    
+    healthcheck:
+      test: wget --no-verbose --tries=1 http://localhost/hc/check -qO- || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    volumes:
+      - /home/bird_egop/project-docker:/mounted
+      - /etc/letsencrypt/archive/birdegop.ru:/mounted/ssl_certificate
+    ports:
+      - '5000:80'
+    expose:
+      - '5000'
+    depends_on:
+      - postgres_db
+      - seq
+    networks:
+      - default
+  
+  outer-nginx:
+    container_name: outer-nginx
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./nginx-test.Dockerfile
+    volumes:
+      - /etc/letsencrypt/archive/birdegop.ru:/etc/nginx/certificates
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+        
+  
+  seq:
+    image: datalust/seq
+    ports:
+      - "50505:80"
+    volumes:
+      - /home/bird_egop/project-docker/seq:/data
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_API_CANONICALURI: "https://birdegop.ru:50505"
+
+  postgres_db:
+    container_name: PostgreSQL
+    image: "postgres:latest"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "azaza123123"
+    volumes:
+      - /home/bird_egop/project-docker/postgresdata:/var/lib/postgresql/data
+      - /home/bird_egop/project-temp:/temp
+    networks:
+      - default
+    ports:
+      - '5432:5432'
+    expose:
+      - '5432:5432'
+    restart: unless-stopped

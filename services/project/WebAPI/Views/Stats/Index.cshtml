@@ -1,0 +1,63 @@
+@model (IDictionary<string, Models.Misc.RequestData> stats, int totalPhp, int totalPhpMyAdmin, int totalIndexNotFound)
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Requests Stats</title>
+    <style>
+        table {        
+            width: 600px;
+            margin: 0 auto;
+            border: 1px solid black;
+        }
+        td {
+            border: 1px solid black; 
+            text-align: center;
+            padding-left: 5px;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <table>
+        <tr>
+            <th>Total PHP</th>
+            <th>Total PhpMyAdmin</th>
+            <th>Total IndexNotFound Exceptions</th>
+        </tr>
+        <tr>
+            <td>
+                @Model.totalPhp
+            </td>
+            <td>
+                @Model.totalPhpMyAdmin
+            </td>
+            <td>
+                @Model.totalIndexNotFound
+            </td>
+        </tr>
+    </table>
+    <hr/>
+    <table>
+        <tr>
+            <th>URL</th>
+            <th>Amount</th>
+            <th>Last Request</th>
+        </tr>
+        @foreach (var key in Model.stats.Keys)
+        {
+            <tr>
+                <td>@key</td>
+                <td>@Model.stats[key].Amount</td>
+                <td>@Model.stats[key].LastRequest</td>
+            </tr>
+        }
+    </table>
+</div>
+</body>
+</html>
